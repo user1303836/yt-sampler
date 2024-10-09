@@ -1,18 +1,16 @@
 package main
 
-import (
-	"fmt"
-	"os/exec"
-)
+import "net/http"
 
 func main() {
-	cmd := exec.Command("yt-dlp", "-x", "--audio-format", "mp3", "https://www.youtube.com/watch?v=dQw4w9WgXcQ")
-	
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		fmt.Println("Err: ", err)
-		return
-	}
+	http.HandleFunc("/api/download", handleDownloadRequest)
+	http.HandleFunc("/download/", serveDownload)
+}
 
-	fmt.Println("Cmd output: ", string(output))
+func handleDownloadRequest(w http.ResponseWriter, r *http.Request) {
+	return
+}
+
+func serveDownload(w http.ResponseWriter, r *http.Request) {
+	return
 }
