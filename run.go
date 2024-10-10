@@ -1,25 +1,46 @@
 package main
 
-import "net/http"
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+)
 
 type DownloadRequest struct {
 	URL string `json:"url"`
 }
 
-type DownloadResponse struct {
-	DownloadID string `json:"download_id"`
-	Status     string `json:"status"`
-}
-
 func main() {
-	http.HandleFunc("/api/download", handleDownloadRequest)
-	http.HandleFunc("/download/", serveDownload)
-}
+	fmt.Println("test api")
 
-func handleDownloadRequest(w http.ResponseWriter, r *http.Request) {
-	return
-}
+	mux := http.NewServeMux()
 
-func serveDownload(w http.ResponseWriter, r *http.Request) {
-	return
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, "hello world")
+	})
+
+	mux.HandleFunc("POST /downloadUrl", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		var req DownloadRequest
+
+		err := json.NewDecoder(r.Body).Decode(&req)
+		if err != nil {
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			fmt.Println("Err decoding req:", err)
+			return
+		}
+
+		fmt.Println("req url:", req.URL)
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"received_url": req.URL})
+	})
+
+	if err := http.ListenAndServe("localhost:8080", mux); err != nil {
+		fmt.Println(err.Error())
+	}
 }
