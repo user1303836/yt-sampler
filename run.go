@@ -36,6 +36,9 @@ func main() {
 
 		fmt.Println("req url:", req.URL)
 
+		// TODO: create unique filename and subdir
+		// TODO: execute yt-dlp command
+		// TODO: pass to rust fundsp service
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]string{"received_url": req.URL})
 	})
