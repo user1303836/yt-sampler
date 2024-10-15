@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"os/exec"
@@ -24,6 +27,50 @@ func sendErrorResponse(w http.ResponseWriter, message string, statusCode int) {
 func sendJSONResponse(w http.ResponseWriter, data interface{}) {
     w.Header().Set("Content-Type", "application/json")
     json.NewEncoder(w).Encode(data)
+}
+
+func sendAudioResponse(w http.ResponseWriter, audioData []byte, filename string) {
+	w.Header().Set("Content-Type", "audio/mpeg")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	w.Write(audioData)
+}
+
+func sendFileToRustService(filePath string) ([]byte, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	part, err := writer.CreateFormFile("file", filepath.Base(filePath))
+	if err != nil {
+		return nil, err
+	}
+	_, err = io.Copy(part, file)
+	if err != nil {
+		return nil, err
+	}
+	err = writer.Close()
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", "http://localhost:8081/process", body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	return io.ReadAll(resp.Body)
 }
 
 func main() {
@@ -68,12 +115,18 @@ func main() {
 		}
 
 		log.Printf("yt-dlp output: %s", output)
+
+		processedAudio, err := sendFileToRustService(outputPath)
+		if err != nil {
+			log.Printf("Error with rust_audio_service: %v", err)
+			sendErrorResponse(w, "Error processing audio", http.StatusInternalServerError)
+			return
+		}
+
 		log.Printf("req url: %s", req.URL)
 
-		// TODO: create unique filename and subdir
-		// TODO: execute yt-dlp command
-		// TODO: pass to rust fundsp service
 		sendJSONResponse(w, map[string]string{"received_url": req.URL, "file_path": outputPath})
+		sendAudioResponse(w, processedAudio, filename)
 	})
 
 	if err := http.ListenAndServe("localhost:8080", mux); err != nil {
