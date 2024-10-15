@@ -3,11 +3,24 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 )
 
 type DownloadRequest struct {
 	URL string `json:"url"`
+}
+
+func sendErrorResponse(w http.ResponseWriter, message string, statusCode int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	json.NewEncoder(w).Encode(map[string]string{"error": message})
+}
+
+func sendJSONResponse(w http.ResponseWriter, data interface{}) {
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(data)
 }
 
 func main() {
@@ -21,26 +34,30 @@ func main() {
 
 	mux.HandleFunc("POST /downloadUrl", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			sendErrorResponse(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
 
 		var req DownloadRequest
-
-		err := json.NewDecoder(r.Body).Decode(&req)
-		if err != nil {
-			http.Error(w, "Invalid request body", http.StatusBadRequest)
-			fmt.Println("Err decoding req:", err)
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			sendErrorResponse(w, "Invalid request body", http.StatusBadRequest)
+			log.Printf("Error decoding req: %v", err)
 			return
 		}
 
-		fmt.Println("req url:", req.URL)
+		tempDir, err := os.MkdirTemp("", "yt-dlp-")
+		if err != nil {
+			sendErrorResponse(w, "Error creating temp dir", http.StatusInternalServerError)
+			return
+		}
+		defer os.RemoveAll(tempDir)
+
+		log.Printf("req url: %s", req.URL)
 
 		// TODO: create unique filename and subdir
 		// TODO: execute yt-dlp command
 		// TODO: pass to rust fundsp service
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"received_url": req.URL})
+		sendJSONResponse(w, map[string]string{"received_url": req.URL})
 	})
 
 	if err := http.ListenAndServe("localhost:8080", mux); err != nil {
