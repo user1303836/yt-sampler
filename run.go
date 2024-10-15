@@ -6,6 +6,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
+	"path/filepath"
+	"time"
 )
 
 type DownloadRequest struct {
@@ -44,7 +47,8 @@ func main() {
 			log.Printf("Error decoding req: %v", err)
 			return
 		}
-
+		
+		// generate temp dir
 		tempDir, err := os.MkdirTemp("", "yt-dlp-")
 		if err != nil {
 			sendErrorResponse(w, "Error creating temp dir", http.StatusInternalServerError)
@@ -52,12 +56,24 @@ func main() {
 		}
 		defer os.RemoveAll(tempDir)
 
+		filename := fmt.Sprintf("%d.mp3", time.Now().UnixNano())
+		outputPath := filepath.Join(tempDir, filename)
+
+		cmd := exec.Command("yt-dlp", "--format", "140", "-o", outputPath, req.URL)
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			log.Printf("Error executing yt-dlp: %v\nOutput: %s", err, output)
+			sendErrorResponse(w, "Error downloading audio", http.StatusInternalServerError)
+			return
+		}
+
+		log.Printf("yt-dlp output: %s", output)
 		log.Printf("req url: %s", req.URL)
 
 		// TODO: create unique filename and subdir
 		// TODO: execute yt-dlp command
 		// TODO: pass to rust fundsp service
-		sendJSONResponse(w, map[string]string{"received_url": req.URL})
+		sendJSONResponse(w, map[string]string{"received_url": req.URL, "file_path": outputPath})
 	})
 
 	if err := http.ListenAndServe("localhost:8080", mux); err != nil {
