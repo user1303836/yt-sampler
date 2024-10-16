@@ -116,6 +116,7 @@ func main() {
 
 		log.Printf("yt-dlp output: %s", output)
 
+		// send to rust_audio_service
 		processedAudio, err := sendFileToRustService(outputPath)
 		if err != nil {
 			log.Printf("Error with rust_audio_service: %v", err)
@@ -126,7 +127,7 @@ func main() {
 		log.Printf("req url: %s", req.URL)
 
 		sendJSONResponse(w, map[string]string{"received_url": req.URL, "file_path": outputPath})
-		sendAudioResponse(w, processedAudio, filename)
+		// sendAudioResponse(w, processedAudio, filename)
 	})
 
 	if err := http.ListenAndServe("localhost:8080", mux); err != nil {

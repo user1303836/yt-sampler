@@ -11,7 +11,6 @@ async fn process_audio(mut payload: Multipart) -> Result<HttpResponse, Error> {
     while let Ok(Some(mut field)) = payload.try_next().await {
         let mut f = std::fs::File::create(file_path)?;
 
-        // Field in turn is stream of *Bytes* object
         while let Some(chunk) = field.next().await {
             let data = chunk?;
             f.write_all(&data)?;
@@ -20,7 +19,7 @@ async fn process_audio(mut payload: Multipart) -> Result<HttpResponse, Error> {
 
     println!("Successfully received and read the file: {}", file_path);
 
-    // Send the file back
+    // Return file
     let file_contents = std::fs::read(file_path)?;
     Ok(HttpResponse::Ok()
         .content_type("audio/mpeg")
