@@ -1,7 +1,6 @@
 # yt-sampler
 
 [<img alt="github" src="https://img.shields.io/badge/user1303836-yt_sampler-darkgreen?style=flat-square&logo=github" height="20">](https://github.com/user1303836/yt-sampler)
-[<img alt="crates.io" src="https://img.shields.io/badge/build-passing-darkgreen?style=flat-square&logo=github" height="20">](https://github.com/user1303836/rust_config_converter/actions/workflows/build.yml)
 
 An API that passes audio files to a fundsp rust service for a variety of audio transformations/utilities.
 
