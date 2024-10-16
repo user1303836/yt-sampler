@@ -4,20 +4,53 @@ use futures::{StreamExt, TryStreamExt};
 use std::io::Write;
 
 async fn process_audio(mut payload: Multipart) -> Result<HttpResponse, Error> {
-    // Temporary file path
     let file_path = "/tmp/received_audio.mp3";
+    let mut splice_duration = 0.0;
+    let mut splice_count = 0;
 
     // Iterate over multipart stream
     while let Ok(Some(mut field)) = payload.try_next().await {
-        let mut f = std::fs::File::create(file_path)?;
+        // let mut f = std::fs::File::create(file_path)?;
+        // while let Some(chunk) = field.next().await {
+        //     let data = chunk?;
+        //     f.write_all(&data)?;
+        // }
 
-        while let Some(chunk) = field.next().await {
-            let data = chunk?;
-            f.write_all(&data)?;
+        let content_disposition = field.content_disposition();
+
+        if let Some(name) = content_disposition.expect("reason").get_name() {
+            match name {
+                "file" => {
+                    let mut f = std::fs::File::create(file_path)?;
+                    while let Some(chunk) = field.next().await {
+                        let data = chunk?;
+                        f.write_all(&data)?;
+                    }
+                },
+                "spliceDuration" => {
+                    let mut value = String::new();
+                    while let Some(chunk) = field.next().await {
+                        let data = chunk?;
+                        value.push_str(std::str::from_utf8(&data)?);
+                    }
+                    splice_duration = value.parse().unwrap_or(0.0);
+                },
+                "spliceCount" => {
+                    let mut value = String::new();
+                    while let Some(chunk) = field.next().await {
+                        let data = chunk?;
+                        value.push_str(std::str::from_utf8(&data)?);
+                    }
+                    splice_count = value.parse().unwrap_or(0);
+                },
+                _ => {}
+            }
         }
     }
 
-    println!("Successfully received and read the file: {}", file_path);
+    println!("Successfully received and read file: {}", file_path);
+    println!("Splice Duration: {}", splice_duration);
+    println!("Splice Count: {}", splice_count);
 
     // Return file
     let file_contents = std::fs::read(file_path)?;

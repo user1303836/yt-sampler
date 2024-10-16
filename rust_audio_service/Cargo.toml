@@ -6,5 +6,6 @@ edition = "2021"
 [dependencies]
 actix-web = "4.9.0"
 actix-multipart = "0.7.2"
+fundsp = "0.2.0"
 futures = "0.3.31"
 tokio = { version = "1.4.0", features = ["full"] }

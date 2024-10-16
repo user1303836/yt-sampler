@@ -15,7 +15,9 @@ import (
 )
 
 type DownloadRequest struct {
-	URL string `json:"url"`
+	URL 			string 	`json:"url"`
+	SpliceDuration	float64 `json:"spliceDuration"`
+	SpliceCount		int 	`json:"spliceCount"`
 }
 
 func sendErrorResponse(w http.ResponseWriter, message string, statusCode int) {
@@ -35,7 +37,7 @@ func sendAudioResponse(w http.ResponseWriter, audioData []byte, filename string)
 	w.Write(audioData)
 }
 
-func sendFileToRustService(filePath string) ([]byte, error) {
+func sendFileToRustService(filePath string, spliceDuration float64, spliceCount int) ([]byte, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
@@ -44,6 +46,7 @@ func sendFileToRustService(filePath string) ([]byte, error) {
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
+
 	part, err := writer.CreateFormFile("file", filepath.Base(filePath))
 	if err != nil {
 		return nil, err
@@ -52,6 +55,10 @@ func sendFileToRustService(filePath string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	writer.WriteField("spliceDuration", fmt.Sprintf("%f", spliceDuration))
+	writer.WriteField("spliceCount", fmt.Sprintf("%d", spliceCount))
+
 	err = writer.Close()
 	if err != nil {
 		return nil, err
@@ -117,7 +124,7 @@ func main() {
 		log.Printf("yt-dlp output: %s", output)
 
 		// send to rust_audio_service
-		processedAudio, err := sendFileToRustService(outputPath)
+		processedAudio, err := sendFileToRustService(outputPath, req.SpliceDuration, req.SpliceCount)
 		if err != nil {
 			log.Printf("Error with rust_audio_service: %v", err)
 			sendErrorResponse(w, "Error processing audio", http.StatusInternalServerError)
@@ -127,7 +134,7 @@ func main() {
 		log.Printf("req url: %s", req.URL)
 
 		sendJSONResponse(w, map[string]string{"received_url": req.URL, "file_path": outputPath})
-		// sendAudioResponse(w, processedAudio, filename)
+		sendAudioResponse(w, processedAudio, filename)
 	})
 
 	if err := http.ListenAndServe("localhost:8080", mux); err != nil {
