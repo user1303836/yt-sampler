@@ -8,7 +8,7 @@ async fn process_audio(mut payload: Multipart) -> Result<HttpResponse, Error> {
     let mut splice_duration = 0.0;
     let mut splice_count = 0;
 
-    // Iterate over multipart stream
+    // Look at multipart stream and do stuff
     while let Ok(Some(mut field)) = payload.try_next().await {
         // let mut f = std::fs::File::create(file_path)?;
         // while let Some(chunk) = field.next().await {
