@@ -6,7 +6,7 @@ use rand::Rng;
 use std::io::Write;
 use std::path::PathBuf;
 use std::fs::File;
-use zip::{ZipWriter, write::FileOptions};
+use zip::{write::FileOptions, ZipWriter};
 
 async fn process_audio(mut payload: Multipart) -> Result<HttpResponse, Error> {
     let file_path: &str = "/tmp/received_audio.mp3";
@@ -61,14 +61,14 @@ async fn process_audio(mut payload: Multipart) -> Result<HttpResponse, Error> {
 
 fn process_wav(input_path: &str, output_dir: &str, splice_duration: f64, splice_count: i32) -> std::io::Result<Vec<PathBuf>> {
     std::fs::create_dir_all(output_dir)?;
-    let mut reader = WavReader::open(input_path).unwrap_();
+    let reader = WavReader::open(input_path).unwrap();
     let spec = reader.spec();
     let duration = reader.duration() as f64 / spec.sample_rate as f64;
 
     let mut rng = rand::thread_rng();
-    let mut splice_files = Vec::new();
+    let splice_files = Vec::new();
 
-    for i in 0..splice_count {
+    for _i in 0..splice_count {
         let start = rng.gen_range(0.0..duration - splice_duration);
         let start_sample = (start * spec.sample_rate as f64) as u32;
         let splice_samples = (splice_duration * spec.sample_rate as f64) as u32; 
@@ -77,8 +77,20 @@ fn process_wav(input_path: &str, output_dir: &str, splice_duration: f64, splice_
     Ok(splice_files)
 }
 
-fn create_zip(files: Vec<PathBuf>, zip_path: &str) -> std::io::Result<()> {
+fn create_zip<T: zip::write::FileOptionExtension + std::marker::Copy>(files: Vec<PathBuf>, zip_path: &str) -> std::io::Result<()> {
+    let file = File::create(zip_path)?;
+    let mut zip = ZipWriter::new(file);
+    let options: FileOptions<'_, T> = FileOptions::default().compression_method(zip::CompressionMethod::Stored);
 
+    for (i, path) in files.iter().enumerate() {
+        let file_name = format!("splice_{}.wav", i);
+        zip.start_file(file_name, options)?;
+        let contents = std::fs::read(path)?;
+        zip.write_all(&contents)?;
+    }
+
+    zip.finish()?;
+    Ok(())
 }
 
 #[actix_web::main]
