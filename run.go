@@ -15,7 +15,7 @@ import (
 )
 
 type DownloadRequest struct {
-	URL 			string 	`json:"url"`
+	URL				string 	`json:"url"`
 	SpliceDuration	float64 `json:"spliceDuration"`
 	SpliceCount		int 	`json:"spliceCount"`
 }

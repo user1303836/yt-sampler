@@ -1,24 +1,24 @@
 use actix_web::{web, App, HttpServer, HttpResponse, Error};
 use actix_multipart::Multipart;
 use futures::{StreamExt, TryStreamExt};
+use hound::{WavReader, WavWriter, WavSpec};
+use rand::Rng;
 use std::io::Write;
+use std::path::PathBuf;
+use std::fs::File;
+use zip::{ZipWriter, write::FileOptions};
 
 async fn process_audio(mut payload: Multipart) -> Result<HttpResponse, Error> {
-    let file_path = "/tmp/received_audio.mp3";
-    let mut splice_duration = 0.0;
-    let mut splice_count = 0;
+    let file_path: &str = "/tmp/received_audio.mp3";
+    let output_dir: &str = "/tmp/splices";
+    let mut splice_duration: f64 = 0.0;
+    let mut splice_count: i32 = 0;
 
     // Look at multipart stream and do stuff
     while let Ok(Some(mut field)) = payload.try_next().await {
-        // let mut f = std::fs::File::create(file_path)?;
-        // while let Some(chunk) = field.next().await {
-        //     let data = chunk?;
-        //     f.write_all(&data)?;
-        // }
-
         let content_disposition = field.content_disposition();
 
-        if let Some(name) = content_disposition.expect("reason").get_name() {
+        if let Some(name) = content_disposition.expect("Something bad happened...").get_name() {
             match name {
                 "file" => {
                     let mut f = std::fs::File::create(file_path)?;
@@ -48,7 +48,7 @@ async fn process_audio(mut payload: Multipart) -> Result<HttpResponse, Error> {
         }
     }
 
-    println!("Successfully received and read file: {}", file_path);
+    println!("File: {}", file_path);
     println!("Splice Duration: {}", splice_duration);
     println!("Splice Count: {}", splice_count);
 
@@ -57,6 +57,28 @@ async fn process_audio(mut payload: Multipart) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok()
         .content_type("audio/mpeg")
         .body(file_contents))
+}
+
+fn process_wav(input_path: &str, output_dir: &str, splice_duration: f64, splice_count: i32) -> std::io::Result<Vec<PathBuf>> {
+    std::fs::create_dir_all(output_dir)?;
+    let mut reader = WavReader::open(input_path).unwrap_();
+    let spec = reader.spec();
+    let duration = reader.duration() as f64 / spec.sample_rate as f64;
+
+    let mut rng = rand::thread_rng();
+    let mut splice_files = Vec::new();
+
+    for i in 0..splice_count {
+        let start = rng.gen_range(0.0..duration - splice_duration);
+        let start_sample = (start * spec.sample_rate as f64) as u32;
+        let splice_samples = (splice_duration * spec.sample_rate as f64) as u32; 
+    }
+
+    Ok(splice_files)
+}
+
+fn create_zip(files: Vec<PathBuf>, zip_path: &str) -> std::io::Result<()> {
+
 }
 
 #[actix_web::main]
