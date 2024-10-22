@@ -86,7 +86,7 @@ func main() {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, "hello world")
+		fmt.Fprint(w, "bruh")
 	})
 
 	mux.HandleFunc("POST /downloadUrl", func(w http.ResponseWriter, r *http.Request) {
