@@ -16,8 +16,8 @@ import (
 
 type DownloadRequest struct {
 	URL				string 	`json:"url"`
-	SpliceDuration	float64 `json:"spliceDuration"`
-	SpliceCount		int 	`json:"spliceCount"`
+	SpliceDuration	                float64 `json:"spliceDuration"`
+	SpliceCount		        int 	`json:"spliceCount"`
 }
 
 func sendErrorResponse(w http.ResponseWriter, message string, statusCode int) {
