@@ -18,6 +18,7 @@ type DownloadRequest struct {
 	URL					string	`json:"url"`
 	SpliceDuration		float64	`json:"spliceDuration"`
 	SpliceCount			int		`json:"spliceCount"`
+	Reverse				bool	`json:"reverse"`
 }
 
 func sendErrorResponse(w http.ResponseWriter, message string, statusCode int) {
@@ -37,7 +38,7 @@ func sendAudioResponse(w http.ResponseWriter, audioData []byte, filename string)
 	w.Write(audioData)
 }
 
-func sendFileToRustService(filePath string, spliceDuration float64, spliceCount int) ([]byte, error) {
+func sendFileToRustService(filePath string, spliceDuration float64, spliceCount int, reverse bool) ([]byte, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
@@ -58,6 +59,7 @@ func sendFileToRustService(filePath string, spliceDuration float64, spliceCount 
 
 	writer.WriteField("spliceDuration", fmt.Sprintf("%f", spliceDuration))
 	writer.WriteField("spliceCount", fmt.Sprintf("%d", spliceCount))
+	writer.WriteField("reverse", fmt.Sprintf("%t", reverse))
 
 	err = writer.Close()
 	if err != nil {
@@ -124,7 +126,7 @@ func main() {
 		log.Printf("yt-dlp output: %s", output)
 
 		// send to rust_audio_service
-		processedAudio, err := sendFileToRustService(outputPath, req.SpliceDuration, req.SpliceCount)
+		processedAudio, err := sendFileToRustService(outputPath, req.SpliceDuration, req.SpliceCount, req.Reverse)
 		if err != nil {
 			log.Printf("Error with rust_audio_service: %v", err)
 			sendErrorResponse(w, "Error processing audio", http.StatusInternalServerError)

@@ -13,6 +13,7 @@ async fn process_audio(mut payload: Multipart) -> Result<HttpResponse, Error> {
     let output_dir: &str = "/tmp/splices";
     let mut splice_duration: f64 = 0.0;
     let mut splice_count: i32 = 0;
+    let mut reverse: bool = false;
 
     // Look at multipart stream and do stuff
     while let Ok(Some(mut field)) = payload.try_next().await {
@@ -43,6 +44,14 @@ async fn process_audio(mut payload: Multipart) -> Result<HttpResponse, Error> {
                     }
                     splice_count = value.parse().unwrap_or(0);
                 },
+                "reverse" => {
+                    let mut value = String::new();
+                    while let Some(chunk) = field.next().await {
+                        let data = chunk?;
+                        value.push_str(std::str::from_utf8(&data)?);
+                    }
+                    reverse = value.parse().unwrap_or(false);
+                },
                 _ => {}
             }
         }
@@ -51,6 +60,7 @@ async fn process_audio(mut payload: Multipart) -> Result<HttpResponse, Error> {
     println!("File: {}", file_path);
     println!("Splice Duration: {}", splice_duration);
     println!("Splice Count: {}", splice_count);
+    println!("Reverse: {}", reverse);
     
     let spliced_files = process_wav(file_path, output_dir, splice_duration, splice_count)
         .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
@@ -61,6 +71,9 @@ async fn process_audio(mut payload: Multipart) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok()
         .content_type("application/zip")
         .body(file_contents))
+}
+
+fn handle_reverse() {
 }
 
 fn process_wav(input_path: &str, output_dir: &str, splice_duration: f64, splice_count: i32) -> std::io::Result<Vec<PathBuf>> {
@@ -78,18 +91,18 @@ fn process_wav(input_path: &str, output_dir: &str, splice_duration: f64, splice_
         let splice_samples = (splice_duration * spec.sample_rate as f64) as u32;
 
         let output_path = PathBuf::from(output_dir).join(format!("splice_{}.wav", i));
-        let mut writer = WavWriter::create(&output_path, spec)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
-
+        let mut writer = WavWriter::create(&output_path, spec).map_err(hound_to_stdio_error)?;
         reader.seek(start_sample)?;
         for _ in 0..splice_samples {
             if let Some(sample) = reader.samples::<i16>().next() {
-                writer.write_sample(sample.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?)
-                    .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+                let sample_value = sample.map_err(hound_to_stdio_error)?;
+                writer.write_sample(sample_value).map_err(hound_to_stdio_error)?;
             } else {
                 break;
             }
         }
+        // not yet implemented
+        handle_reverse();
 
         splice_files.push(output_path);
     }
@@ -112,6 +125,10 @@ fn create_zip(files: Vec<PathBuf>, zip_path: &str) -> std::io::Result<()> {
 
     zip.finish()?;
     Ok(())
+}
+
+fn hound_to_stdio_error(e: hound::Error) -> std::io::Error {
+    std::io::Error::new(std::io::ErrorKind::Other, e)
 }
 
 #[actix_web::main]
