@@ -82,6 +82,19 @@ func sendFileToRustService(filePath string, spliceDuration float64, spliceCount 
 	return io.ReadAll(resp.Body)
 }
 
+func validateRequest(req DownloadRequest) error {
+	if req.URL == "" {
+		return fmt.Errorf("URL cannot be empty")
+	}
+	if req.SpliceDuration <= 0 {
+		return fmt.Errorf("Splice duration must be > 0")
+	}
+	if req.SpliceCount <= 0 {
+		return fmt.Errorf("Splice count must be > 0")
+	}
+	return nil
+}
+
 func main() {
 	fmt.Println("test api")
 
