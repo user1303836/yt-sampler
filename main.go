@@ -12,6 +12,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"time"
+
+	"yt-sampler/config"
 )
 
 type DownloadRequest struct {
@@ -98,6 +100,7 @@ func validateRequest(req DownloadRequest) error {
 func main() {
 	fmt.Println("test api")
 
+	cfg := config.NewConfig()
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -152,7 +155,8 @@ func main() {
 		sendAudioResponse(w, processedAudio, filename)
 	})
 
-	if err := http.ListenAndServe("localhost:8080", mux); err != nil {
-		fmt.Println(err.Error())
-	}
+    serverAddr := fmt.Sprintf("%s:%s", cfg.ServerHost, cfg.ServerPort)
+    if err := http.ListenAndServe(serverAddr, mux); err != nil {
+        fmt.Println(err.Error())
+    }
 }

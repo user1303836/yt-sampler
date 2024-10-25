@@ -1,4 +1,4 @@
-name: Rust
+name: Go
 
 on:
   push:
@@ -16,4 +16,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build
-        run: cd rust_audio_service && cargo build --verbose
+        run: go build

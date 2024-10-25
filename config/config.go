@@ -31,8 +31,8 @@ func getEnvOrInt64(key string, defaultValue int64) int64 {
 	return defaultValue
 }
 
-func NewConfig() *config {
-	return Config{
+func NewConfig() *Config {
+	return &Config{
 		RustServiceURL: getEnvOr("RUST_SERVICE_URL", "http://localhost:8081"),
 		ServerHost: getEnvOr("SERVER_HOST", "localhost"),
 		ServerPort: getEnvOr("SERVER_PORT", "8080"),
