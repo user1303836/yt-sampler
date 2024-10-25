@@ -6,11 +6,11 @@ An API that passes audio files to a fundsp rust service for a variety of audio t
 
 ## Example Usage
 
-This will be containerized soon...
+Actual usage examples soon kek
 
 ```bash
 # run the go api
-go build run.go && go run run.go
+go run main.go
 
 # run the rust audio service
 cd rust_audio_service
