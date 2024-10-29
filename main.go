@@ -89,10 +89,10 @@ func validateRequest(req DownloadRequest) error {
 		return fmt.Errorf("URL cannot be empty")
 	}
 	if req.SpliceDuration <= 0 {
-		return fmt.Errorf("Splice duration must be > 0")
+		return fmt.Errorf("splice duration must be > 0")
 	}
 	if req.SpliceCount <= 0 {
-		return fmt.Errorf("Splice count must be > 0")
+		return fmt.Errorf("splice count must be > 0")
 	}
 	return nil
 }
@@ -114,6 +114,11 @@ func main() {
 		}
 
 		var req DownloadRequest
+		if err := validateRequest(req); err != nil {
+			sendErrorResponse(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			sendErrorResponse(w, "Invalid request body", http.StatusBadRequest)
 			log.Printf("Error decoding req: %v", err)
