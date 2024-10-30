@@ -28,3 +28,29 @@ impl fmt::Display for AudioError{
         }
     }
 }
+
+impl std::error::Error for AudioError {}
+
+impl ResponseError for AudioError {
+    fn error_response(&self) -> HttpResponse {
+        let status = match self {
+            AudioError::InvalidDuration(_) | AudioError::InvalidSpliceCount(_) => StatusCode::BAD_REQUEST,
+            AudioError::FileNotFound(_) => StatusCode::NOT_FOUND,
+            _ => StatusCode::INTERNAL_SERVER_ERROR,
+        };
+
+        HttpResponse::build(status).json(json!({"error": self.to_string(), "error_type": format!("{:?}", self)}))
+    }
+}
+
+impl From<io::Error> for AudioError {
+    fn from(err: io::Error) -> AudioError {
+        AudioError::IoError(err);
+    }
+}
+
+impl From<hound::Error> for AudioError {
+    fn from(err: hound::Error) {
+        AudioError::WavError(err);
+    }
+}
