@@ -41,6 +41,14 @@ impl ResponseError for AudioError {
 
         HttpResponse::build(status).json(json!({"error": self.to_string(), "error_type": format!("{:?}", self)}))
     }
+
+    fn status_code(&self) -> StatusCode {
+        match self {
+            AudioError::InvalidDuration(_) | AudioError::InvalidSpliceCount(_) => StatusCode::BAD_REQUEST,
+            AudioError::FileNotFound(_) => StatusCode::NOT_FOUND,
+            _ => StatusCode:: INTERNAL_SERVER_ERROR,
+        }
+    }
 }
 
 impl From<io::Error> for AudioError {
