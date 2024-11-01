@@ -8,6 +8,19 @@ use std::path::PathBuf;
 use std::fs::File;
 use zip::{write::FileOptions, ZipWriter};
 
+mod errors;
+use errors::{AudioError, AudioResult};
+
+fn validate_splice_params(splice_duration: f64, splice_count: i32) -> AudioResult<()> {
+    if splice_duration <= 0.0 {
+        return Err(AudioError::InvalidDuration("splice_duration must be positive".to_string()));
+    };
+    if splice_count < 1 {
+        return Err(AudioError::InvalidSpliceCount("splice count must be >= 1".to_string()));
+    };
+    Ok(())
+}
+
 async fn process_audio(mut payload: Multipart) -> Result<HttpResponse, Error> {
     let file_path: &str = "/tmp/received_audio.mp3";
     let output_dir: &str = "/tmp/splices";
@@ -15,7 +28,7 @@ async fn process_audio(mut payload: Multipart) -> Result<HttpResponse, Error> {
     let mut splice_count: i32 = 0;
     let mut reverse: bool = false;
 
-    // Look at multipart stream and do stuff
+    // Look at multipart stream
     while let Ok(Some(mut field)) = payload.try_next().await {
         let content_disposition = field.content_disposition();
 
@@ -24,17 +37,17 @@ async fn process_audio(mut payload: Multipart) -> Result<HttpResponse, Error> {
                 "file" => {
                     let mut f = std::fs::File::create(file_path)?;
                     while let Some(chunk) = field.next().await {
-                        let data = chunk?;
+                        let data = chunk.map_err(|e| AudioError::ProcessingError(e.to_string()))?;
                         f.write_all(&data)?;
                     }
                 },
                 "spliceDuration" => {
                     let mut value = String::new();
                     while let Some(chunk) = field.next().await {
-                        let data = chunk?;
-                        value.push_str(std::str::from_utf8(&data)?);
+                        let data = chunk.map_err(|e| AudioError::InvalidDuration(e.to_string()))?;
+                        value.push_str(std::str::from_utf8(&data).map_err(|e| AudioError::ProcessingError(e.to_string()))?);
                     }
-                    splice_duration = value.parse().unwrap_or(0.0);
+                    splice_duration = value.parse().map_err(|_| AudioError::InvalidDuration("Invalid splice duration format".to_string()))?;
                 },
                 "spliceCount" => {
                     let mut value = String::new();
@@ -61,6 +74,7 @@ async fn process_audio(mut payload: Multipart) -> Result<HttpResponse, Error> {
     println!("Splice Duration: {}", splice_duration);
     println!("Splice Count: {}", splice_count);
     println!("Reverse: {}", reverse);
+    validate_splice_params(splice_duration, splice_count);
     
     let spliced_files = process_wav(file_path, output_dir, splice_duration, splice_count)
         .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
