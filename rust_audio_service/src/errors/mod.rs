@@ -2,10 +2,12 @@ use std::fmt;
 use std::io;
 use actix_web::{HttpResponse, ResponseError};
 use actix_web::http::StatusCode;
+use serde_json::json;
 
+#[derive(Debug)]
 pub enum AudioError {
-    IoError(io::status),
-    WavError(hound::error),
+    IoError(io::Error),
+    WavError(hound::Error),
     InvalidDuration(String),
     InvalidSpliceCount(String),
     ProcessingError(String),
@@ -23,7 +25,7 @@ impl fmt::Display for AudioError{
             AudioError::InvalidDuration(msg) => write!(f, "Invalid duration: {}", msg),
             AudioError::InvalidSpliceCount(msg) => write!(f, "Invalid splice count: {}", msg),
             AudioError::ProcessingError(msg) => write!(f, "Processing error: {}", msg),
-            AudioError::FileNotFound(path) => write!(f, "File not found: {}", msg),
+            AudioError::FileNotFound(path) => write!(f, "File not found: {}", path),
             AudioError::InvalidFormat(msg) => write!(f, "Invalid format: {}", msg)
         }
     }
@@ -53,12 +55,12 @@ impl ResponseError for AudioError {
 
 impl From<io::Error> for AudioError {
     fn from(err: io::Error) -> AudioError {
-        AudioError::IoError(err);
+        AudioError::IoError(err)
     }
 }
 
 impl From<hound::Error> for AudioError {
-    fn from(err: hound::Error) {
-        AudioError::WavError(err);
+    fn from(err: hound::Error) -> AudioError {
+        AudioError::WavError(err)
     }
 }

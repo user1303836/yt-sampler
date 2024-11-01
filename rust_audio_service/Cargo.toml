@@ -9,6 +9,7 @@ actix-multipart = "0.7.2"
 fundsp = "0.2.0"
 futures = "0.3.31"
 hound = "3.5.1"
+serde_json = "1.0"
 rand = "0.8.5"
 tokio = { version = "1.4.0", features = ["full"] }
 zip = "2.2.0"
