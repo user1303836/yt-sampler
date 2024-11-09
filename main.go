@@ -17,10 +17,10 @@ import (
 )
 
 type DownloadRequest struct {
-	URL					string	`json:"url"`
+	URL			string	`json:"url"`
 	SpliceDuration		float64	`json:"spliceDuration"`
-	SpliceCount			int		`json:"spliceCount"`
-	Reverse				bool	`json:"reverse"`
+	SpliceCount		int	`json:"spliceCount"`
+	Reverse			bool	`json:"reverse"`
 }
 
 func sendErrorResponse(w http.ResponseWriter, message string, statusCode int) {
