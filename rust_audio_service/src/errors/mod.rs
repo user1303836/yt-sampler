@@ -48,7 +48,7 @@ impl ResponseError for AudioError {
         match self {
             AudioError::InvalidDuration(_) | AudioError::InvalidSpliceCount(_) => StatusCode::BAD_REQUEST,
             AudioError::FileNotFound(_) => StatusCode::NOT_FOUND,
-            _ => StatusCode:: INTERNAL_SERVER_ERROR,
+            _ => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 }

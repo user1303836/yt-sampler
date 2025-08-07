@@ -1,31 +1,72 @@
-use actix_web::{web, App, HttpServer, HttpResponse, Error};
+use actix_web::{web, HttpResponse, Result, Error};
 use actix_multipart::Multipart;
 use futures::{StreamExt, TryStreamExt};
 use std::io::Write;
 use log::{info, error};
+use std::time::SystemTime;
 
-mod errors;
-mod processors;
-mod api;
-mod utils;
+use crate::processors::{ProcessorConfig, splice::SpliceProcessor, AudioProcessor};
+use crate::api::{ProcessAudioRequest, ProcessAudioResponse, HealthResponse, ErrorResponse};
+use crate::errors::AudioError;
+use crate::utils::create_zip_from_result;
 
-use errors::AudioError;
-use processors::{ProcessorConfig, splice::SpliceProcessor, AudioProcessor};
-use utils::{create_zip_from_result, cleanup_temp_files};
+static START_TIME: std::sync::OnceLock<SystemTime> = std::sync::OnceLock::new();
 
-// Legacy endpoint for backward compatibility with Go CLI
-async fn process_audio(mut payload: Multipart) -> Result<HttpResponse, Error> {
-    let file_path: &str = "/tmp/received_audio.wav";
-    let output_dir: &str = "/tmp/splices";
+pub fn config(cfg: &mut web::ServiceConfig) {
+    cfg.service(
+        web::scope("/api/v1")
+            .route("/health", web::get().to(health_check))
+            .route("/audio/splice", web::post().to(process_audio_json))
+            .route("/audio/splice/multipart", web::post().to(process_audio_multipart))
+    );
+}
+
+pub fn init_start_time() {
+    START_TIME.set(SystemTime::now()).ok();
+}
+
+async fn health_check() -> Result<HttpResponse> {
+    let now = SystemTime::now();
+    let start_time = START_TIME.get().unwrap_or(&now);
+    let uptime = SystemTime::now()
+        .duration_since(*start_time)
+        .unwrap_or_default()
+        .as_secs();
+
+    Ok(HttpResponse::Ok().json(HealthResponse {
+        status: "healthy".to_string(),
+        version: env!("CARGO_PKG_VERSION").to_string(),
+        uptime_seconds: uptime,
+    }))
+}
+
+async fn process_audio_json(req: web::Json<ProcessAudioRequest>) -> Result<HttpResponse> {
+    info!("Processing JSON audio request: {:?}", req.config);
+    
+    // For JSON requests, we need to handle file upload differently
+    // This is a simplified version - in a real implementation you'd want
+    // to use a different approach for file uploads with JSON
+    let error_response = ErrorResponse {
+        error: "JSON file upload not yet implemented. Use /audio/splice/multipart endpoint.".to_string(),
+        error_type: "NotImplemented".to_string(),
+        timestamp: chrono::Utc::now().to_rfc3339(),
+    };
+    
+    Ok(HttpResponse::NotImplemented().json(error_response))
+}
+
+async fn process_audio_multipart(mut payload: Multipart) -> Result<HttpResponse, Error> {
+    let file_path = "/tmp/received_audio.wav";
+    let output_dir = "/tmp/splices";
     let mut splice_duration: f64 = 0.0;
     let mut splice_count: i32 = 0;
     let mut reverse: bool = false;
 
-    // Look at multipart stream
+    // Parse multipart data
     while let Ok(Some(mut field)) = payload.try_next().await {
         let content_disposition = field.content_disposition();
 
-        if let Some(name) = content_disposition.expect("Something bad happened...").get_name() {
+        if let Some(name) = content_disposition.expect("Invalid content disposition").get_name() {
             match name {
                 "file" => {
                     let mut f = std::fs::File::create(file_path)?;
@@ -63,7 +104,7 @@ async fn process_audio(mut payload: Multipart) -> Result<HttpResponse, Error> {
         }
     }
 
-    info!("Legacy endpoint - Processing audio - File: {}, Duration: {}, Count: {}, Reverse: {}", 
+    info!("Processing audio - File: {}, Duration: {}, Count: {}, Reverse: {}", 
           file_path, splice_duration, splice_count, reverse);
 
     // Create config and process using the new architecture
@@ -84,7 +125,7 @@ async fn process_audio(mut payload: Multipart) -> Result<HttpResponse, Error> {
                     let file_contents = std::fs::read(zip_path)?;
                     
                     // Cleanup temporary files
-                    cleanup_temp_files(file_path, &result.files, zip_path);
+                    crate::utils::cleanup_temp_files(file_path, &result.files, zip_path);
                     
                     Ok(HttpResponse::Ok()
                         .content_type("application/zip")
@@ -92,32 +133,13 @@ async fn process_audio(mut payload: Multipart) -> Result<HttpResponse, Error> {
                 },
                 Err(e) => {
                     error!("Failed to create ZIP: {}", e);
-                    Ok(HttpResponse::InternalServerError().finish())
+                    Ok(HttpResponse::InternalServerError().json(ProcessAudioResponse::error(e.to_string())))
                 }
             }
         },
         Err(e) => {
             error!("Audio processing failed: {}", e);
-            Ok(HttpResponse::BadRequest().finish())
+            Ok(HttpResponse::BadRequest().json(ProcessAudioResponse::error(e.to_string())))
         }
     }
-}
-
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    env_logger::init();
-    api::v1::init_start_time();
-    
-    info!("Starting audio service on 127.0.0.1:8081");
-    info!("Legacy endpoint: POST /process");
-    info!("New API endpoints: /api/v1/health, /api/v1/audio/splice/multipart");
-    
-    HttpServer::new(|| {
-        App::new()
-            .route("/process", web::post().to(process_audio))  // Legacy endpoint
-            .configure(api::v1::config)  // New v1 API endpoints
-    })
-    .bind("127.0.0.1:8081")?
-    .run()
-    .await
 }
