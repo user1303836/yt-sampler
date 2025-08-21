@@ -1,0 +1,53 @@
+warning: variants `FileNotFound` and `InvalidFormat` are never constructed
+  --> src/errors/mod.rs:14:5
+   |
+8  | pub enum AudioError {
+   |          ---------- variants in this enum
+...
+14 |     FileNotFound(String),
+   |     ^^^^^^^^^^^^
+15 |     InvalidFormat(String)
+   |     ^^^^^^^^^^^^^
+   |
+   = note: `AudioError` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+   = note: `#[warn(dead_code)]` on by default
+
+warning: associated function `success` is never used
+  --> src/api/mod.rs:19:12
+   |
+18 | impl ProcessAudioResponse {
+   | ------------------------- associated function in this implementation
+19 |     pub fn success(result: ProcessingResult) -> Self {
+   |            ^^^^^^^
+
+warning: `rust_audio_service` (bin "rust_audio_service") generated 2 warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.24s
+     Running `target/debug/rust_audio_service`
+[2025-08-08T16:55:52Z INFO  rust_audio_service] Starting audio service on 127.0.0.1:8081
+[2025-08-08T16:55:52Z INFO  rust_audio_service] Legacy endpoint: POST /process
+[2025-08-08T16:55:52Z INFO  rust_audio_service] New API endpoints: /api/v1/health, /api/v1/audio/splice/multipart
+[2025-08-08T16:55:52Z INFO  actix_server::builder] starting 10 workers
+[2025-08-08T16:55:52Z INFO  actix_server::server] Actix runtime found; starting in Actix runtime
+[2025-08-08T16:55:52Z INFO  actix_server::server] starting service: "actix-web-service-127.0.0.1:8081", workers: 10, listening on: 127.0.0.1:8081
+[2025-08-20T18:20:00Z INFO  rust_audio_service::api::v1] Processing audio - File: /tmp/received_audio.wav, Duration: 1.5, Count: 3, Reverse: false
+[2025-08-20T18:20:00Z INFO  rust_audio_service::processors::splice] Processing splice - Duration: 1.5, Count: 3, Reverse: false
+[2025-08-20T18:20:00Z INFO  rust_audio_service::utils] Cleanup completed for processing session
+[2025-08-20T18:20:11Z INFO  rust_audio_service] Legacy endpoint - Processing audio - File: /tmp/received_audio.wav, Duration: 2, Count: 2, Reverse: true
+[2025-08-20T18:20:11Z INFO  rust_audio_service::processors::splice] Processing splice - Duration: 2, Count: 2, Reverse: true
+[2025-08-20T18:20:11Z INFO  rust_audio_service::utils] Cleanup completed for processing session
+[2025-08-20T18:20:22Z INFO  rust_audio_service::api::v1] Processing audio - File: /tmp/received_audio.wav, Duration: -1, Count: 3, Reverse: false
+[2025-08-20T18:20:22Z ERROR rust_audio_service::api::v1] Audio processing failed: Invalid duration: splice_duration must be positive
+[2025-08-20T18:20:29Z INFO  rust_audio_service] Legacy endpoint - Processing audio - File: /tmp/received_audio.wav, Duration: 1, Count: 0, Reverse: false
+[2025-08-20T18:20:29Z ERROR rust_audio_service] Audio processing failed: Invalid splice count: splice count must be >= 1
+[2025-08-20T18:21:57Z INFO  actix_server::server] SIGTERM received; starting graceful shutdown
+[2025-08-20T18:21:57Z INFO  actix_server::accept] accept thread stopped
+[2025-08-20T18:21:57Z INFO  actix_server::worker] shutting down idle worker
+[2025-08-20T18:21:57Z INFO  actix_server::worker] shutting down idle worker
+[2025-08-20T18:21:57Z INFO  actix_server::worker] shutting down idle worker
+[2025-08-20T18:21:57Z INFO  actix_server::worker] shutting down idle worker
+[2025-08-20T18:21:57Z INFO  actix_server::worker] shutting down idle worker
+[2025-08-20T18:21:57Z INFO  actix_server::worker] shutting down idle worker
+[2025-08-20T18:21:57Z INFO  actix_server::worker] shutting down idle worker
+[2025-08-20T18:21:57Z INFO  actix_server::worker] shutting down idle worker
+[2025-08-20T18:21:57Z INFO  actix_server::worker] shutting down idle worker
+[2025-08-20T18:21:57Z INFO  actix_server::worker] shutting down idle worker
