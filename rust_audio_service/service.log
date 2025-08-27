@@ -1,3 +1,9 @@
+   Compiling unicase v2.8.1
+   Compiling v_htmlescape v0.15.8
+   Compiling http-range v0.1.5
+   Compiling mime_guess v2.0.5
+   Compiling actix-files v0.6.6
+   Compiling rust_audio_service v0.1.0 (/Users/user8088366/Development/yt-sampler/rust_audio_service)
 warning: variants `FileNotFound` and `InvalidFormat` are never constructed
   --> src/errors/mod.rs:14:5
    |
@@ -21,33 +27,33 @@ warning: associated function `success` is never used
    |            ^^^^^^^
 
 warning: `rust_audio_service` (bin "rust_audio_service") generated 2 warnings
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.24s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.29s
      Running `target/debug/rust_audio_service`
-[2025-08-08T16:55:52Z INFO  rust_audio_service] Starting audio service on 127.0.0.1:8081
-[2025-08-08T16:55:52Z INFO  rust_audio_service] Legacy endpoint: POST /process
-[2025-08-08T16:55:52Z INFO  rust_audio_service] New API endpoints: /api/v1/health, /api/v1/audio/splice/multipart
-[2025-08-08T16:55:52Z INFO  actix_server::builder] starting 10 workers
-[2025-08-08T16:55:52Z INFO  actix_server::server] Actix runtime found; starting in Actix runtime
-[2025-08-08T16:55:52Z INFO  actix_server::server] starting service: "actix-web-service-127.0.0.1:8081", workers: 10, listening on: 127.0.0.1:8081
-[2025-08-20T18:20:00Z INFO  rust_audio_service::api::v1] Processing audio - File: /tmp/received_audio.wav, Duration: 1.5, Count: 3, Reverse: false
-[2025-08-20T18:20:00Z INFO  rust_audio_service::processors::splice] Processing splice - Duration: 1.5, Count: 3, Reverse: false
-[2025-08-20T18:20:00Z INFO  rust_audio_service::utils] Cleanup completed for processing session
-[2025-08-20T18:20:11Z INFO  rust_audio_service] Legacy endpoint - Processing audio - File: /tmp/received_audio.wav, Duration: 2, Count: 2, Reverse: true
-[2025-08-20T18:20:11Z INFO  rust_audio_service::processors::splice] Processing splice - Duration: 2, Count: 2, Reverse: true
-[2025-08-20T18:20:11Z INFO  rust_audio_service::utils] Cleanup completed for processing session
-[2025-08-20T18:20:22Z INFO  rust_audio_service::api::v1] Processing audio - File: /tmp/received_audio.wav, Duration: -1, Count: 3, Reverse: false
-[2025-08-20T18:20:22Z ERROR rust_audio_service::api::v1] Audio processing failed: Invalid duration: splice_duration must be positive
-[2025-08-20T18:20:29Z INFO  rust_audio_service] Legacy endpoint - Processing audio - File: /tmp/received_audio.wav, Duration: 1, Count: 0, Reverse: false
-[2025-08-20T18:20:29Z ERROR rust_audio_service] Audio processing failed: Invalid splice count: splice count must be >= 1
-[2025-08-20T18:21:57Z INFO  actix_server::server] SIGTERM received; starting graceful shutdown
-[2025-08-20T18:21:57Z INFO  actix_server::accept] accept thread stopped
-[2025-08-20T18:21:57Z INFO  actix_server::worker] shutting down idle worker
-[2025-08-20T18:21:57Z INFO  actix_server::worker] shutting down idle worker
-[2025-08-20T18:21:57Z INFO  actix_server::worker] shutting down idle worker
-[2025-08-20T18:21:57Z INFO  actix_server::worker] shutting down idle worker
-[2025-08-20T18:21:57Z INFO  actix_server::worker] shutting down idle worker
-[2025-08-20T18:21:57Z INFO  actix_server::worker] shutting down idle worker
-[2025-08-20T18:21:57Z INFO  actix_server::worker] shutting down idle worker
-[2025-08-20T18:21:57Z INFO  actix_server::worker] shutting down idle worker
-[2025-08-20T18:21:57Z INFO  actix_server::worker] shutting down idle worker
-[2025-08-20T18:21:57Z INFO  actix_server::worker] shutting down idle worker
+[2025-08-27T18:52:03Z INFO  rust_audio_service] Starting audio service on 127.0.0.1:8081
+[2025-08-27T18:52:03Z INFO  rust_audio_service] Web interface: http://127.0.0.1:8081
+[2025-08-27T18:52:03Z INFO  rust_audio_service] Legacy endpoint: POST /process
+[2025-08-27T18:52:03Z INFO  rust_audio_service] New API endpoints: /api/v1/health, /api/v1/audio/splice/multipart, /api/v1/audio/normalize/multipart
+[2025-08-27T18:52:03Z INFO  actix_server::builder] starting 10 workers
+[2025-08-27T18:52:03Z INFO  actix_server::server] Actix runtime found; starting in Actix runtime
+[2025-08-27T18:52:03Z INFO  actix_server::server] starting service: "actix-web-service-127.0.0.1:8081", workers: 10, listening on: 127.0.0.1:8081
+[2025-08-27T18:53:00Z INFO  rust_audio_service::api::v1] Processing audio - File: /tmp/received_audio.wav, Duration: 1, Count: 3, Reverse: false
+[2025-08-27T18:53:00Z INFO  rust_audio_service::processors::splice] Processing splice - Duration: 1, Count: 3, Reverse: false
+[2025-08-27T18:53:00Z INFO  rust_audio_service::utils] Cleanup completed for processing session
+[2025-08-27T18:53:06Z INFO  rust_audio_service::api::v1] Processing normalize - Target level: 0.9, Apply to splices: false
+[2025-08-27T18:53:06Z INFO  rust_audio_service::processors::normalize] Processing normalize - Target level: 0.9, Apply to splices: false
+[2025-08-27T18:53:06Z INFO  rust_audio_service::processors::normalize] Normalizing: peak=0.600, target=0.900, gain=1.500x
+[2025-08-27T18:53:06Z INFO  rust_audio_service::utils] Cleanup completed for processing session
+[2025-08-27T18:53:27Z INFO  rust_audio_service::api::v1] Processing normalize - Target level: 2, Apply to splices: false
+[2025-08-27T18:53:27Z ERROR rust_audio_service::api::v1] Audio normalization failed: Processing error: target_level must be between 0.0 and 1.0 (where 1.0 = maximum level)
+[2025-08-27T18:53:34Z INFO  actix_server::server] SIGTERM received; starting graceful shutdown
+[2025-08-27T18:53:34Z INFO  actix_server::accept] accept thread stopped
+[2025-08-27T18:53:34Z INFO  actix_server::worker] shutting down idle worker
+[2025-08-27T18:53:34Z INFO  actix_server::worker] shutting down idle worker
+[2025-08-27T18:53:34Z INFO  actix_server::worker] shutting down idle worker
+[2025-08-27T18:53:34Z INFO  actix_server::worker] shutting down idle worker
+[2025-08-27T18:53:34Z INFO  actix_server::worker] shutting down idle worker
+[2025-08-27T18:53:34Z INFO  actix_server::worker] shutting down idle worker
+[2025-08-27T18:53:34Z INFO  actix_server::worker] shutting down idle worker
+[2025-08-27T18:53:34Z INFO  actix_server::worker] shutting down idle worker
+[2025-08-27T18:53:34Z INFO  actix_server::worker] shutting down idle worker
+[2025-08-27T18:53:34Z INFO  actix_server::worker] shutting down idle worker

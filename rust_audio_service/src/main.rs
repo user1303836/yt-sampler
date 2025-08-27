@@ -1,5 +1,6 @@
 use actix_web::{web, App, HttpServer, HttpResponse, Error};
 use actix_multipart::Multipart;
+use actix_files as fs;
 use futures::{StreamExt, TryStreamExt};
 use std::io::Write;
 use log::{info, error};
@@ -109,13 +110,15 @@ async fn main() -> std::io::Result<()> {
     api::v1::init_start_time();
     
     info!("Starting audio service on 127.0.0.1:8081");
+    info!("Web interface: http://127.0.0.1:8081");
     info!("Legacy endpoint: POST /process");
-    info!("New API endpoints: /api/v1/health, /api/v1/audio/splice/multipart");
+    info!("New API endpoints: /api/v1/health, /api/v1/audio/splice/multipart, /api/v1/audio/normalize/multipart");
     
     HttpServer::new(|| {
         App::new()
             .route("/process", web::post().to(process_audio))  // Legacy endpoint
             .configure(api::v1::config)  // New v1 API endpoints
+            .service(fs::Files::new("/", "./web").index_file("index.html"))  // Static web files
     })
     .bind("127.0.0.1:8081")?
     .run()

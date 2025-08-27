@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::errors::AudioResult;
 
 pub mod splice;
+pub mod normalize;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -11,6 +12,10 @@ pub enum ProcessorConfig {
         duration: f64,
         count: i32,
         reverse: bool,
+    },
+    Normalize {
+        target_level: f64,  // Target peak level (0.0 to 1.0, where 1.0 = 0dB)
+        apply_to_splices: bool,  // If true, normalize each splice individually
     },
 }
 

@@ -13,7 +13,12 @@ pub fn create_zip_from_result(result: &ProcessingResult, zip_path: &str) -> std:
         .compression_method(zip::CompressionMethod::Stored);
 
     for (i, path) in result.files.iter().enumerate() {
-        let file_name = format!("splice_{}.wav", i);
+        // Use the actual filename from the path, or create a generic name if needed
+        let file_name = if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+            name.to_string()
+        } else {
+            format!("output_{}.wav", i)
+        };
         zip.start_file(file_name, options)?;
         let contents = std::fs::read(path)?;
         zip.write_all(&contents)?;

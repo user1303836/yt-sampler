@@ -35,6 +35,7 @@ impl AudioProcessor for SpliceProcessor {
         
         let (duration, count, reverse) = match config {
             ProcessorConfig::Splice { duration, count, reverse } => (*duration, *count, *reverse),
+            _ => return Err(AudioError::ProcessingError("Invalid config for SpliceProcessor".to_string())),
         };
 
         self.validate_config(config)?;
@@ -97,7 +98,8 @@ impl AudioProcessor for SpliceProcessor {
         match config {
             ProcessorConfig::Splice { duration, count, .. } => {
                 Self::validate_splice_params(*duration, *count)
-            }
+            },
+            _ => Err(AudioError::ProcessingError("Invalid config for SpliceProcessor".to_string())),
         }
     }
 

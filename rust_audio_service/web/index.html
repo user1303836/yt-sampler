@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Processor - Creative YouTube Audio Tools</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎵 Audio Processor</h1>
+            <p>Creative tools for transforming and processing audio from YouTube videos</p>
+            <div class="status" id="status">Ready</div>
+        </header>
+
+        <main>
+            <!-- File Upload Section -->
+            <section class="upload-section">
+                <h2>1. Upload Audio File</h2>
+                <div class="upload-area" id="uploadArea">
+                    <input type="file" id="audioFile" accept=".wav" style="display: none;">
+                    <div class="upload-content">
+                        <span class="upload-icon">📁</span>
+                        <p>Click to select a WAV file or drag and drop</p>
+                        <small>Supports WAV format only</small>
+                    </div>
+                </div>
+                <div class="file-info" id="fileInfo" style="display: none;"></div>
+            </section>
+
+            <!-- Processing Options -->
+            <section class="processing-section">
+                <h2>2. Choose Processing Effect</h2>
+                
+                <div class="effect-tabs">
+                    <button class="tab-button active" data-tab="splice">🎯 Splice</button>
+                    <button class="tab-button" data-tab="normalize">📊 Normalize</button>
+                </div>
+
+                <!-- Splice Options -->
+                <div class="effect-panel active" id="splice-panel">
+                    <h3>Audio Splicing</h3>
+                    <p>Create random audio splices from your audio file</p>
+                    
+                    <div class="form-group">
+                        <label for="spliceDuration">Splice Duration (seconds):</label>
+                        <input type="number" id="spliceDuration" value="2.0" step="0.1" min="0.1" max="30">
+                        <small>Length of each audio splice</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="spliceCount">Number of Splices:</label>
+                        <input type="number" id="spliceCount" value="5" step="1" min="1" max="20">
+                        <small>How many random splices to create</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="reverse">
+                            Reverse Audio Samples
+                        </label>
+                        <small>Play each splice backwards for creative effects</small>
+                    </div>
+                </div>
+
+                <!-- Normalize Options -->
+                <div class="effect-panel" id="normalize-panel">
+                    <h3>Audio Normalization</h3>
+                    <p>Adjust audio levels for consistent volume</p>
+                    
+                    <div class="form-group">
+                        <label for="targetLevel">Target Level (0.0 - 1.0):</label>
+                        <input type="number" id="targetLevel" value="0.85" step="0.05" min="0.1" max="1.0">
+                        <small>Peak audio level (1.0 = maximum, 0.85 recommended)</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="radio-label">
+                            <input type="radio" name="normalizeMode" value="false" checked>
+                            Normalize Entire File
+                        </label>
+                        <small>Apply normalization to the complete audio file</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="radio-label">
+                            <input type="radio" name="normalizeMode" value="true">
+                            Create Normalized Splices
+                        </label>
+                        <small>Create 5 normalized splices of 2 seconds each</small>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Process Button -->
+            <section class="action-section">
+                <button class="process-button" id="processButton" disabled>
+                    🚀 Process Audio
+                </button>
+                <div class="progress" id="progress" style="display: none;">
+                    <div class="progress-bar"></div>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section class="results-section" id="resultsSection" style="display: none;">
+                <h2>✨ Processing Complete</h2>
+                <div class="result-info" id="resultInfo"></div>
+                <div class="download-section">
+                    <button class="download-button" id="downloadButton">
+                        📥 Download Results
+                    </button>
+                </div>
+            </section>
+
+            <!-- Error Section -->
+            <section class="error-section" id="errorSection" style="display: none;">
+                <h2>❌ Error</h2>
+                <div class="error-message" id="errorMessage"></div>
+                <button class="retry-button" id="retryButton">Try Again</button>
+            </section>
+        </main>
+
+        <footer>
+            <p>Built with Rust 🦀 | <a href="/api/v1/health" target="_blank">API Health</a> | 
+            <a href="https://github.com/anthropics/claude-code" target="_blank">View Docs</a></p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

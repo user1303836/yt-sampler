@@ -5,7 +5,7 @@ use std::io::Write;
 use log::{info, error};
 use std::time::SystemTime;
 
-use crate::processors::{ProcessorConfig, splice::SpliceProcessor, AudioProcessor};
+use crate::processors::{ProcessorConfig, splice::SpliceProcessor, normalize::NormalizeProcessor, AudioProcessor};
 use crate::api::{ProcessAudioRequest, ProcessAudioResponse, HealthResponse, ErrorResponse};
 use crate::errors::AudioError;
 use crate::utils::create_zip_from_result;
@@ -18,6 +18,7 @@ pub fn config(cfg: &mut web::ServiceConfig) {
             .route("/health", web::get().to(health_check))
             .route("/audio/splice", web::post().to(process_audio_json))
             .route("/audio/splice/multipart", web::post().to(process_audio_multipart))
+            .route("/audio/normalize/multipart", web::post().to(process_normalize_multipart))
     );
 }
 
@@ -139,6 +140,84 @@ async fn process_audio_multipart(mut payload: Multipart) -> Result<HttpResponse,
         },
         Err(e) => {
             error!("Audio processing failed: {}", e);
+            Ok(HttpResponse::BadRequest().json(ProcessAudioResponse::error(e.to_string())))
+        }
+    }
+}
+
+async fn process_normalize_multipart(mut payload: Multipart) -> Result<HttpResponse, Error> {
+    let file_path = "/tmp/received_audio.wav";
+    let output_dir = "/tmp/normalized";
+    let mut target_level: f64 = 0.95;  // Default to 95% of maximum level
+    let mut apply_to_splices: bool = false;
+
+    // Parse multipart data
+    while let Ok(Some(mut field)) = payload.try_next().await {
+        let content_disposition = field.content_disposition();
+
+        if let Some(name) = content_disposition.expect("Invalid content disposition").get_name() {
+            match name {
+                "file" => {
+                    let mut f = std::fs::File::create(file_path)?;
+                    while let Some(chunk) = field.next().await {
+                        let data = chunk.map_err(|e| AudioError::ProcessingError(e.to_string()))?;
+                        f.write_all(&data)?;
+                    }
+                },
+                "targetLevel" => {
+                    let mut value = String::new();
+                    while let Some(chunk) = field.next().await {
+                        let data = chunk.map_err(|e| AudioError::ProcessingError(e.to_string()))?;
+                        value.push_str(std::str::from_utf8(&data).map_err(|e| AudioError::ProcessingError(e.to_string()))?);
+                    }
+                    target_level = value.parse().map_err(|_| AudioError::ProcessingError("Invalid target level format".to_string()))?;
+                },
+                "applyToSplices" => {
+                    let mut value = String::new();
+                    while let Some(chunk) = field.next().await {
+                        let data = chunk?;
+                        value.push_str(std::str::from_utf8(&data)?);
+                    }
+                    apply_to_splices = value.parse().map_err(|_| AudioError::ProcessingError("Invalid applyToSplices flag format".to_string()))?;
+                },
+                _ => {}
+            }
+        }
+    }
+
+    info!("Processing normalize - Target level: {}, Apply to splices: {}", target_level, apply_to_splices);
+
+    // Create config and process using the normalize processor
+    let config = ProcessorConfig::Normalize {
+        target_level,
+        apply_to_splices,
+    };
+
+    let processor = NormalizeProcessor::new();
+    
+    match processor.process(file_path, output_dir, &config) {
+        Ok(result) => {
+            let zip_path = "/tmp/normalized.zip";
+            
+            match create_zip_from_result(&result, zip_path) {
+                Ok(_) => {
+                    let file_contents = std::fs::read(zip_path)?;
+                    
+                    // Cleanup temporary files
+                    crate::utils::cleanup_temp_files(file_path, &result.files, zip_path);
+                    
+                    Ok(HttpResponse::Ok()
+                        .content_type("application/zip")
+                        .body(file_contents))
+                },
+                Err(e) => {
+                    error!("Failed to create ZIP: {}", e);
+                    Ok(HttpResponse::InternalServerError().json(ProcessAudioResponse::error(e.to_string())))
+                }
+            }
+        },
+        Err(e) => {
+            error!("Audio normalization failed: {}", e);
             Ok(HttpResponse::BadRequest().json(ProcessAudioResponse::error(e.to_string())))
         }
     }

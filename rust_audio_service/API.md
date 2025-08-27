@@ -107,6 +107,59 @@ JSON-based endpoint for future file upload integration.
 
 ---
 
+### Audio Normalization
+
+**POST** `/api/v1/audio/normalize/multipart`
+
+Normalizes audio levels to ensure consistent volume. Can either normalize the entire file or create normalized splices.
+
+**Content-Type:** `multipart/form-data`
+
+**Form Fields:**
+- `file` - Audio file (WAV format)
+- `targetLevel` - Target peak level (float, 0.0 to 1.0, where 1.0 = 100% of maximum level)
+- `applyToSplices` - Mode selection (boolean):
+  - `false`: Normalize entire file and return single normalized file
+  - `true`: Create 5 normalized splices of 2 seconds each
+
+**Response:**
+- Content-Type: `application/zip`
+- Body: ZIP file containing normalized audio file(s)
+
+**Error Response:**
+```json
+{
+  "success": false,
+  "result": null,
+  "error": "target_level must be between 0.0 and 1.0 (where 1.0 = maximum level)"
+}
+```
+
+**Status Codes:**
+- `200 OK` - Normalization successful
+- `400 Bad Request` - Invalid parameters (target level out of range, silent audio, etc.)
+- `500 Internal Server Error` - Processing failed
+
+**Example - Normalize Entire File:**
+```bash
+curl -X POST http://127.0.0.1:8081/api/v1/audio/normalize/multipart \
+  -F "file=@audio.wav" \
+  -F "targetLevel=0.85" \
+  -F "applyToSplices=false" \
+  --output normalized.zip
+```
+
+**Example - Create Normalized Splices:**
+```bash
+curl -X POST http://127.0.0.1:8081/api/v1/audio/normalize/multipart \
+  -F "file=@audio.wav" \
+  -F "targetLevel=0.9" \
+  -F "applyToSplices=true" \
+  --output normalized_splices.zip
+```
+
+---
+
 ## Processing Configuration
 
 ### Splice Configuration
@@ -124,6 +177,20 @@ JSON-based endpoint for future file upload integration.
 - `duration` (float) - Duration of each splice in seconds, must be > 0
 - `count` (integer) - Number of splices to generate, must be >= 1
 - `reverse` (boolean) - Whether to reverse the audio samples in each splice
+
+### Normalize Configuration
+
+```json
+{
+  "type": "normalize",
+  "target_level": 0.85,
+  "apply_to_splices": false
+}
+```
+
+**Parameters:**
+- `target_level` (float) - Target peak level (0.0 to 1.0, where 1.0 = 100% of maximum level)
+- `apply_to_splices` (boolean) - If true, creates normalized splices; if false, normalizes entire file
 
 ---
 
